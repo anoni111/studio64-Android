@@ -1,1 +1,0 @@
-#include "studio/romgen/shotgun/sg_tex_hdc_look2_blink.inc.c"
