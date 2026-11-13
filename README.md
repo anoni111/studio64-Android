@@ -20,19 +20,6 @@ Por eso hay que generar el motor **una vez en un PC** y pasarlo a la app:
 
 Es de uso privado: no publiques ese zip (contiene código y assets de Nintendo).
 
-## Compilar la APK
-
-### Opción A: GitHub Actions (sin instalar nada)
-1. Sube esta carpeta a un repositorio de GitHub (con `git push`; `app/libnode/.../libnode.so` pesa ~62 MB. Si subes por la web, borra `app/libnode` y el workflow lo descarga solo).
-2. Pestaña **Actions → Build APK → Run workflow**.
-3. Descarga el artefacto `Studio64-arm64-v8a-apk` e instala el `.apk`.
-
-### Opción B: Android Studio
-Abre esta carpeta (JDK 17, Android SDK 34, NDK 26.1.10909125, CMake 3.22.1) y pulsa *Run*, o `gradle :app:assembleDebug` con Gradle 8.7+.
-(Si falta `app/libnode`, ejecuta `bash scripts/fetch-libnode.sh`.)
-
-> **Nota:** este proyecto no se pudo compilar en el entorno donde lo preparé (sin acceso a los repositorios del SDK de Android). El servidor Node sí se probó arrancando en local; la compilación de Gradle/NDK está sin probar. Si falla, pega el error y lo corrijo.
-
 ## Uso y límites
 
 - **Controles:** el editor está pensado para ratón y teclado. Funciona con teclado/ratón/mando Bluetooth o USB. Sin ellos, el botón ⌨ (abajo a la derecha) muestra una barra de teclas en pantalla (Tab, WASD, flechas, Espacio, Shift/Ctrl, 1-5…). No lo probé en un dispositivo real, así que el manejo táctil de la cámara puede ser limitado.
