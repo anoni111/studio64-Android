@@ -1,34 +1,48 @@
-# Studio 64 para Android (arm64-v8a)
+# Studio 64 for Android (arm64-v8a)
 
-Adaptación de [supermochi64/studio64](https://github.com/supermochi64/studio64) **v0.2.4-beta** a una APK.
+An Android APK adaptation of [supermochi64/studio64](https://github.com/supermochi64/studio64), based on version `0.2.4-beta`.
 
-## Cómo funciona
+## How it works
 
-- La app lleva **Node 18 embebido** ([nodejs-mobile](https://github.com/nodejs-mobile/nodejs-mobile), solo `arm64-v8a`) y ejecuta el servidor original de Studio 64 en `127.0.0.1:8064`.
-- La interfaz es un **WebView** a pantalla completa que carga ese servidor.
-- Está todo el código JS del servidor y de la web (`studio64-app/`), con sus dependencias (`ws`, `marked`, `dompurify`, `zod`).
+- The app bundles Node 18 through [nodejs-mobile](https://github.com/nodejs-mobile/nodejs-mobile) for `arm64-v8a` and runs Studio 64's local server at `127.0.0.1:8064`.
+- A full-screen Android WebView loads the editor from that local server.
+- The APK contains the JavaScript server, web interface, and dependencies. It does **not** contain the compiled Super Mario 64 WebAssembly engine or a game ROM; prepare the engine on a desktop and import it as described below.
 
-### Importante: el motor del juego NO se puede compilar en el teléfono
+## Android requirements
 
-Studio 64 compila Super Mario 64 a WebAssembly **desde tu propia ROM** con Emscripten, Python, Zig, make… (≈1 GB de herramientas de escritorio). Eso no corre dentro de una app Android, y yo no puedo incluir el motor porque contiene código y assets de Nintendo.
+- Android 8.0 (API 26) or later on an `arm64-v8a` device. Other CPU architectures are not supported by this APK.
+- The editor uses WebGL 2 and approximately 256 MB of WebAssembly memory. Performance depends on the phone's GPU and available memory.
+- A keyboard, mouse, or Bluetooth/USB game controller is recommended. The on-screen keyboard button (`⌨`, at the bottom right) provides keys such as Tab, WASD, arrows, Space, Shift/Ctrl, and 1–5. Touch camera controls may be limited; they have not been tested on a physical device.
 
-Por eso hay que generar el motor **una vez en un PC** y pasarlo a la app:
+## Prepare and import the game engine
 
-1. En un PC (Windows/macOS/Linux) descarga `studio64-0.2.4-beta.zip` de la [release](https://github.com/supermochi64/studio64/releases/tag/v0.2.4-beta), ábrelo con el instalador y completa el setup con tu ROM US de SM64.
-2. Dentro de la carpeta de Studio 64, **comprime las carpetas `web` y `server`** en un único `.zip` (la app solo toma `web/engine`, `web/data`, `web/thumbs`, `server/data` y `server/samples`; lo demás lo ignora).
-3. Pasa ese `.zip` al teléfono, abre la app y pulsa **Elegir .zip del motor**.
+The Super Mario 64 WebAssembly engine must be built once on a Windows, macOS, or Linux computer. It cannot be compiled inside the Android app. The desktop setup uses tools such as Emscripten, Python, Zig, and make, and may download about 1 GB of toolchain files.
 
+1. On a computer, download the [Studio 64 v0.2.4-beta desktop release](https://github.com/supermochi64/studio64/releases/tag/v0.2.4-beta), run its installer, and complete setup with your own original, unmodified U.S. (NTSC) Super Mario 64 ROM.
+2. In the configured Studio 64 folder, create one ZIP containing the `web/` and `server/` folders. Preserve their folder names and contents. The ZIP must include `web/engine/sm64.us.f3dex2e.wasm` and `web/engine/sm64.us.f3dex2e.js`; the Android importer also brings in `web/data/`, `web/thumbs/`, `server/data/`, and `server/samples/`.
+3. Transfer the ZIP to your phone. Launch the APK and, when prompted, tap **“Elegir .zip del motor”** (“Choose engine ZIP”). Keep the app open while it imports the files.
 
-## Uso y límites
+If the ZIP is missing either required `.wasm` or `.js` engine file, the import will fail. The engine ZIP and the phone's ROM import below are separate steps: the engine ZIP is needed to load the game engine; importing a ROM with the gear is for ROM/BPS export.
 
-- **Controles:** el editor está pensado para ratón y teclado. Funciona con teclado/ratón/mando Bluetooth o USB. Sin ellos, el botón ⌨ (abajo a la derecha) muestra una barra de teclas en pantalla (Tab, WASD, flechas, Espacio, Shift/Ctrl, 1-5…). No lo probé en un dispositivo real, así que el manejo táctil de la cámara puede ser limitado.
-- **Proyectos** y ajustes se guardan en la memoria interna de la app. Las descargas/exportaciones van a `Descargas/Studio64`.
-- **Exportar ROM `.z64` / parche `.bps`:** funciona sin compilar, pero necesita tu ROM de SM64 US: botón ⚙ → «Importar ROM…» (acepta .z64/.v64/.n64 o un .zip). La primera exportación tarda un poco más (prepara la ROM base a partir de tu ROM). Los archivos se guardan en `Descargas/Studio64`.
-- **No funciona en Android:** las imágenes/muestras que genera el setup (se traen del PC en el zip) y el asistente de IA vía suscripción de Claude. El asistente con API key de otros proveedores sí está disponible.
-- Pantalla: la web se muestra con un viewport fijo de 1280 px (layout de escritorio) escalado a la pantalla; para cambiarlo edita `width=1280` en los `<meta viewport>` de `studio64-app/web/*.html`.
-- Rendimiento: usa WebGL 2 y ~256 MB de memoria WebAssembly; en un Snapdragon 8 Elite debería ir bien.
-- Si cambias el contenido de `studio64-app/`, sube `APP_VERSION` en `Installer.kt` para que la app vuelva a descomprimirlo.
+## Import a ROM on the phone
 
-## Licencias
+To enable ROM and BPS exports, tap the **⚙** button at the bottom right, then choose **“Importar ROM…”** (“Import ROM…”). Select your own original, unmodified U.S. (NTSC) Super Mario 64 ROM as a `.z64`, `.v64`, or `.n64` file, or a `.zip` containing one. The ROM must be 8 MiB. The app normalizes `.v64` and `.n64` byte order and checks the N64 header, game title, and U.S. region before saving it in the app's private data.
 
-Código de Studio 64: MIT (supermochi64). Basado en sm64ex y la decompilación de SM64 (términos propios). nodejs-mobile: MIT/Node.js. Fan project, sin relación con Nintendo.
+No game ROM is included. Use the original U.S. ROM compatible with the ROM-export patch. A file can pass the importer's basic size/region checks and still be rejected later by the patch if it is a different revision, modified, or a bad dump. The first ROM/BPS export may take longer while Studio 64 prepares the ROM base.
+
+The ⚙ menu also includes **“Reimportar motor (.zip)…”** (“Re-import engine ZIP…”) if you need to replace the installed engine files.
+
+## Usage and limitations
+
+- Projects and settings are stored in the app's internal storage. On Android 10 or later, exports are saved to `Downloads/Studio64`; on Android 8 and 9, they are saved in the app-specific Downloads folder.
+- Setup-generated images and samples need to be included in the ZIP transferred from the desktop. The Claude subscription-based AI assistant is not available in this Android build; AI providers configured with their own API key are supported.
+- The web editor uses a fixed 1280 px desktop viewport scaled to the phone screen. To change it, edit `width=1280` in the `<meta name="viewport">` tags in `studio64-app/web/*.html`.
+- If you change the contents of `studio64-app/`, increment `APP_VERSION` in `app/src/main/java/com/studio64/android/Installer.kt` so the app unpacks the updated files after installation.
+
+## Build notes
+
+The GitHub Release APK is a debug-signed test build for `arm64-v8a`, not a production-signed package.
+
+## Licenses
+
+Studio 64 is MIT-licensed by `supermochi64`. It is based on `sm64ex` and the Super Mario 64 decompilation under their respective terms. `nodejs-mobile` and Node.js are MIT-licensed. This is a fan project and is not affiliated with Nintendo.
