@@ -18,7 +18,6 @@ Por eso hay que generar el motor **una vez en un PC** y pasarlo a la app:
 2. Dentro de la carpeta de Studio 64, **comprime las carpetas `web` y `server`** en un único `.zip` (la app solo toma `web/engine`, `web/data`, `web/thumbs`, `server/data` y `server/samples`; lo demás lo ignora).
 3. Pasa ese `.zip` al teléfono, abre la app y pulsa **Elegir .zip del motor**.
 
-Es de uso privado: no publiques ese zip (contiene código y assets de Nintendo).
 
 ## Uso y límites
 
