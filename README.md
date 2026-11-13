@@ -1,135 +1,48 @@
-<div align="center">
+# Studio 64 para Android (arm64-v8a)
 
-<img src="web/favicon.svg" width="72" alt="">
+Adaptación de [supermochi64/studio64](https://github.com/supermochi64/studio64) **v0.2.4-beta** a una APK.
 
-# Studio 64
+## Cómo funciona
 
-**Create anything you ever wanted in Super Mario 64, in real time.**
+- La app lleva **Node 18 embebido** ([nodejs-mobile](https://github.com/nodejs-mobile/nodejs-mobile), solo `arm64-v8a`) y ejecuta el servidor original de Studio 64 en `127.0.0.1:8064`.
+- La interfaz es un **WebView** a pantalla completa que carga ese servidor.
+- Está todo el código JS del servidor y de la web (`studio64-app/`), con sus dependencias (`ws`, `marked`, `dompurify`, `zod`).
 
-[![Version 0.2.4-beta](https://img.shields.io/badge/version-0.2.4--beta-f5b301)](CHANGELOG.md)
-[![MIT license](https://img.shields.io/badge/license-MIT-3b82f6)](LICENSE)
+### Importante: el motor del juego NO se puede compilar en el teléfono
 
-[![Watch the Studio 64 trailer on YouTube](https://img.youtube.com/vi/hcomzBaXxZo/maxresdefault.jpg)](https://www.youtube.com/watch?v=hcomzBaXxZo)
+Studio 64 compila Super Mario 64 a WebAssembly **desde tu propia ROM** con Emscripten, Python, Zig, make… (≈1 GB de herramientas de escritorio). Eso no corre dentro de una app Android, y yo no puedo incluir el motor porque contiene código y assets de Nintendo.
 
-[▶ Watch the trailer](https://www.youtube.com/watch?v=hcomzBaXxZo)
+Por eso hay que generar el motor **una vez en un PC** y pasarlo a la app:
 
-[Download](../../releases/latest) · [Getting started](docs/getting-started.md) · [Documentation](docs/README.md) · [FAQ](docs/faq.md)
+1. En un PC (Windows/macOS/Linux) descarga `studio64-0.2.4-beta.zip` de la [release](https://github.com/supermochi64/studio64/releases/tag/v0.2.4-beta), ábrelo con el instalador y completa el setup con tu ROM US de SM64.
+2. Dentro de la carpeta de Studio 64, **comprime las carpetas `web` y `server`** en un único `.zip` (la app solo toma `web/engine`, `web/data`, `web/thumbs`, `server/data` y `server/samples`; lo demás lo ignora).
+3. Pasa ese `.zip` al teléfono, abre la app y pulsa **Elegir .zip del motor**.
 
-</div>
+Es de uso privado: no publiques ese zip (contiene código y assets de Nintendo).
 
-Studio 64 is a level editor for Super Mario 64 that runs the real game in your browser, so every
-change shows up while you play. Put down a platform, press `Tab`, and you're already jumping on it.
-No emulator, no ROM patching, no waiting for a compile.
+## Compilar la APK
 
-You need your own US copy of the game. Studio 64 doesn't include it (see [Legal](#legal)).
+### Opción A: GitHub Actions (sin instalar nada)
+1. Sube esta carpeta a un repositorio de GitHub (con `git push`; `app/libnode/.../libnode.so` pesa ~62 MB. Si subes por la web, borra `app/libnode` y el workflow lo descarga solo).
+2. Pestaña **Actions → Build APK → Run workflow**.
+3. Descarga el artefacto `Studio64-arm64-v8a-apk` e instala el `.apk`.
 
-## Get started
+### Opción B: Android Studio
+Abre esta carpeta (JDK 17, Android SDK 34, NDK 26.1.10909125, CMake 3.22.1) y pulsa *Run*, o `gradle :app:assembleDebug` con Gradle 8.7+.
+(Si falta `app/libnode`, ejecuta `bash scripts/fetch-libnode.sh`.)
 
-Download `studio64-0.2.4-beta.zip` from [Releases](../../releases/latest) and unzip it. Then:
+> **Nota:** este proyecto no se pudo compilar en el entorno donde lo preparé (sin acceso a los repositorios del SDK de Android). El servidor Node sí se probó arrancando en local; la compilación de Gradle/NDK está sin probar. Si falla, pega el error y lo corrijo.
 
-**Windows 10/11**: open the `Studio 64` folder and double-click **Start Studio 64**. If Windows says
-"Windows protected your PC", click **More info**, then **Run anyway**.
+## Uso y límites
 
-**macOS 13+**: open the folder, right-click **Start Studio 64.command** and choose **Open**, then
-**Open** again.
+- **Controles:** el editor está pensado para ratón y teclado. Funciona con teclado/ratón/mando Bluetooth o USB. Sin ellos, el botón ⌨ (abajo a la derecha) muestra una barra de teclas en pantalla (Tab, WASD, flechas, Espacio, Shift/Ctrl, 1-5…). No lo probé en un dispositivo real, así que el manejo táctil de la cámara puede ser limitado.
+- **Proyectos** y ajustes se guardan en la memoria interna de la app. Las descargas/exportaciones van a `Descargas/Studio64`.
+- **Exportar ROM `.z64` / parche `.bps`:** funciona sin compilar, pero necesita tu ROM de SM64 US: botón ⚙ → «Importar ROM…» (acepta .z64/.v64/.n64 o un .zip). La primera exportación tarda un poco más (prepara la ROM base a partir de tu ROM). Los archivos se guardan en `Descargas/Studio64`.
+- **No funciona en Android:** las imágenes/muestras que genera el setup (se traen del PC en el zip) y el asistente de IA vía suscripción de Claude. El asistente con API key de otros proveedores sí está disponible.
+- Pantalla: la web se muestra con un viewport fijo de 1280 px (layout de escritorio) escalado a la pantalla; para cambiarlo edita `width=1280` en los `<meta viewport>` de `studio64-app/web/*.html`.
+- Rendimiento: usa WebGL 2 y ~256 MB de memoria WebAssembly; en un Snapdragon 8 Elite debería ir bien.
+- Si cambias el contenido de `studio64-app/`, sube `APP_VERSION` en `Installer.kt` para que la app vuelva a descomprimirlo.
 
-**Linux**: open a terminal in the folder and run `./start-studio64.sh`.
+## Licencias
 
-Your browser opens a setup page. Drop your Super Mario 64 ROM on it (`.z64`, `.n64` or `.v64`, zipped
-is fine) and press **Build Studio 64**. The first build downloads about 1 GB and takes 5 to 10
-minutes. After that it starts in a few seconds, offline too. Nothing gets installed system-wide and
-you don't need an admin password.
-
-The step-by-step version with pictures is in [Getting started](docs/getting-started.md).
-
-Working on the code? `git clone`, then `npm start` (Node.js 18 or newer) does the same setup.
-`docker compose up` works too.
-
-## What you can do
-
-| | |
-|---|---|
-| ![Building a level by hand](docs/img/no-ai.png) | ![Roads, fences and plants](docs/img/roads.png) |
-| **Build by hand.** Blocks in 29 materials, about 600 of the game's objects, stairs and bridges in one click, undo for everything. | **Roads and nature.** Draw roads, paths and fences that follow the ground, then paint trees, flowers and rocks with a brush. |
-| ![Sculpting terrain](docs/img/terrain.png) | ![Writing dialog](docs/img/story.png) |
-| **Shape the ground.** Sculpt and paint terrain, even in the original levels, or start a new level from a template or a heightmap. | **Tell a story.** Dialogs in the game's own font, characters who talk, events, cutscenes, and every text in the game. |
-| ![Sound studio](docs/img/sound.png) | ![Title screen editor](docs/img/title-screen.png) |
-| **Make the music.** Write songs in a piano roll, played with the game's own instruments, and swap any sound effect. | **Make it yours.** Your own title screen and logo, then export a real N64 ROM and a .bps patch you can upload anywhere. |
-
-There's more: stars and red coins, moving platforms, enemies you put together from behavior blocks,
-game rules (gravity, jump height, lives), doors, pipes and paintings, your own 3D models and
-textures, and play-testing tools like save states and slow motion. A few extras come from
-Shoggoth World, my other SM64 hack: drivable cars with races, Shotgun Mario, Katana Mario and a
-night-time Tokyo level template. With your own Super Mario Sunshine disc you can also bring in
-Piantas, Nokis and a few enemies.
-
-Every feature has its own page in the [documentation](docs/README.md).
-
-## Works without AI
-
-Studio 64 is a complete editor with nothing but mouse and keyboard. No account, no AI, no internet
-after the first setup.
-
-If you want one, there's an optional assistant that builds with you: type "put a ring of coins around
-me" and it uses the same tools you do, live in the game, and its edits undo like yours. It works with
-Claude, OpenAI, Gemini, OpenRouter or a local model. When nothing is connected, the chat and every AI
-button stay hidden. The trailer uses the assistant, but the car, the weapons and Bowser are all in
-the object library too. Setup: [AI providers](docs/ai-providers.md).
-
-## This is a beta
-
-0.2.4-beta is the ninth beta. The setup was tested automatically from the release ZIP on five
-Linux distributions (Ubuntu 22.04 and 24.04, Debian 12, Fedora, Arch). The first people to try it
-on Windows and macOS found setup problems there, and this release fixes the ones reported so far. If
-you try it on Windows or a Mac, I'd love to hear how it went, good or bad.
-
-Found a bug? [Open an issue](../../issues/new/choose) with what you did and what happened. The
-[troubleshooting page](docs/troubleshooting.md) covers the common setup problems.
-
-## Documentation
-
-- [Getting started](docs/getting-started.md): install, first run, your first hack in 5 minutes
-- [FAQ](docs/faq.md) and [Troubleshooting](docs/troubleshooting.md)
-- [Keyboard shortcuts](docs/keyboard-shortcuts.md)
-- [ROM export](docs/rom-export.md): your hack as an N64 ROM and a .bps patch
-- [All guides](docs/README.md): build mode, terrain, story, sound, world, assets, sharing
-- For developers: [Architecture](docs/architecture.md), [Building the engine](docs/building-the-engine.md),
-  [Testing](docs/testing.md), [Contributing](CONTRIBUTING.md)
-
-## Legal
-
-Studio 64 is a fan project. It isn't affiliated with or endorsed by Nintendo. *Super Mario 64*,
-*Super Mario Sunshine* and Mario are trademarks of Nintendo.
-
-This repository contains no ROM, no disc image, nothing extracted from the games and none of
-the decompiled game: no levels, models, animations or text of Super Mario 64. The setup downloads
-the engine's source from [sm64ex](https://github.com/sm64pc/sm64ex) and adds Studio 64's own files
-and changes to it (`engine-upstream/` holds only Studio 64's own lines, see
-[Building the engine](docs/building-the-engine.md#where-the-engines-source-comes-from)), then
-builds the game's assets from **your own** ROM on your own machine. What it builds (`web/engine/`
-and the playable game export) contains Nintendo's code and assets, so keep it to yourself or share it
-privately with people who own the game. Don't publish it or sell it. To share a hack with other
-Studio 64 users, send them the project file (`.s64hack`). To share it with everyone, export it as a ROM hack and post the `.bps` patch: it only holds
-your changes ([ROM export](docs/rom-export.md)).
-
-The Shoggoth World content is my own work and ships with Studio 64. The few pieces of it that are
-built on the game's own models (the dressed Toads and Goombas) ship as recipes, and the setup makes
-them from your ROM ([details](docs/building-the-engine.md#the-shoggoth-content)).
-
-## License and credits
-
-Studio 64's own code is under the [MIT license](LICENSE). The engine it builds on, sm64ex and the
-Super Mario 64 decompilation, is downloaded during the setup and keeps their terms.
-
-Studio 64 stands on the work of a lot of people:
-
-- [n64decomp/sm64](https://github.com/n64decomp/sm64), the Super Mario 64 decompilation
-- [sm64ex](https://github.com/sm64pc/sm64ex), the PC port the engine is built on
-- [Emscripten](https://emscripten.org), which turns it into WebAssembly
-- [ws](https://github.com/websockets/ws), [marked](https://marked.js.org),
-  [DOMPurify](https://github.com/cure53/DOMPurify), [zod](https://zod.dev),
-  [Playwright](https://playwright.dev), the
-  [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk), and the Inter and
-  JetBrains Mono fonts
-
-Trailer music and sound credits are in [promo/CREDITS.md](promo/CREDITS.md).
+Código de Studio 64: MIT (supermochi64). Basado en sm64ex y la decompilación de SM64 (términos propios). nodejs-mobile: MIT/Node.js. Fan project, sin relación con Nintendo.
